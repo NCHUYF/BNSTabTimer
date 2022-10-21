@@ -140,7 +140,7 @@ void CSettingDlg::OnRButtonUp(UINT nFlags, CPoint point)
 
 void CSettingDlg::OnBnClickedSub()
 {
-	_valCache = max(0, _valCache - 1);
+	_valCache = max(5, _valCache - 1);
 	UpdateUI();
 }
 
