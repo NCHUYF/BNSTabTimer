@@ -24,6 +24,7 @@
     <Keyword>MFCProj</Keyword>
     <RootNamespace>BNSTabTimer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <ProjectName>剑灵tab解控计时器</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -191,8 +192,10 @@
   <ItemGroup>
     <ClInclude Include="Base\BaseSingleton.h" />
     <ClInclude Include="BNSTabTimer.h" />
-    <ClInclude Include="BNSTabTimerDlg.h" />
+    <ClInclude Include="Dlg\BNSTabTimerDlg.h" />
+    <ClInclude Include="Dlg\SettingDlg.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="Model\GlobalData.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
@@ -200,7 +203,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BNSTabTimer.cpp" />
-    <ClCompile Include="BNSTabTimerDlg.cpp" />
+    <ClCompile Include="Dlg\BNSTabTimerDlg.cpp" />
+    <ClCompile Include="Dlg\SettingDlg.cpp" />
+    <ClCompile Include="Model\GlobalData.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

@@ -5,7 +5,7 @@
 #include "pch.h"
 #include "framework.h"
 #include "BNSTabTimer.h"
-#include "BNSTabTimerDlg.h"
+#include "Dlg/BNSTabTimerDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
