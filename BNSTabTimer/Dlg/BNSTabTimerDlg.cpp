@@ -16,6 +16,46 @@
 #endif
 
 #define ID_TIMER 1
+#define WM_MOUSEBUTTONDOWN WM_USER+777
+
+BEGIN_MESSAGE_MAP(CBNSTabTimerDlg, CDialogEx)
+	ON_WM_PAINT()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_RBUTTONUP()
+	ON_WM_ERASEBKGND()
+	ON_WM_CTLCOLOR()
+	ON_WM_TIMER()
+	ON_WM_DESTROY()
+	ON_WM_HOTKEY()
+	ON_MESSAGE(WM_MOUSEBUTTONDOWN, OnMouseButtonDown)
+END_MESSAGE_MAP()
+
+// 鼠标钩子
+HHOOK glHook = NULL;
+LRESULT CALLBACK MouseProc(int nCode, WPARAM msg, LPARAM lparam)
+{
+	if (msg == WM_XBUTTONUP)
+	{
+		auto glWnd = CBNSTabTimerDlg::Instance();
+		if (glWnd && IsWindow(glWnd->GetSafeHwnd()))
+		{
+			PMOUSEHOOKSTRUCT mh = (PMOUSEHOOKSTRUCT)lparam;
+			POINT pt;
+			pt.x = mh->pt.x;
+			pt.y = mh->pt.y;
+			glWnd->PostMessage(WM_MOUSEBUTTONDOWN, msg, (LPARAM)nCode);
+		}
+	}
+	return CallNextHookEx(glHook, nCode, msg, lparam);
+}
+
+LRESULT CBNSTabTimerDlg::OnMouseButtonDown(WPARAM wParam, LPARAM lParam)
+{
+	if (!IsWindowVisible())return 0;
+	Reset();
+	Start();
+	return 0;
+}
 
 CBNSTabTimerDlg::CBNSTabTimerDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD, pParent)
@@ -28,18 +68,6 @@ void CBNSTabTimerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 }
-
-BEGIN_MESSAGE_MAP(CBNSTabTimerDlg, CDialogEx)
-	ON_WM_PAINT()
-	ON_WM_LBUTTONDOWN()
-	ON_WM_RBUTTONUP()
-	ON_WM_ERASEBKGND()
-	ON_WM_CTLCOLOR()
-	ON_WM_TIMER()
-	ON_WM_DESTROY()
-	ON_WM_HOTKEY()
-END_MESSAGE_MAP()
-
 
 void CBNSTabTimerDlg::Reset()
 {
@@ -63,17 +91,6 @@ void CBNSTabTimerDlg::Pause()
 {
 	KillTimer(ID_TIMER);
 	_bStart = false;
-}
-
-void CBNSTabTimerDlg::OnDestroy()
-{
-	Reset();
-
-	// 注销热键
-	UnregisterHotKey(m_hWnd, 1001);
-
-	font.DeleteObject();
-	__super::OnDestroy();
 }
 
 BOOL CBNSTabTimerDlg::OnInitDialog()
@@ -106,9 +123,14 @@ BOOL CBNSTabTimerDlg::OnInitDialog()
 	// 内容
 	{
 		CRect rcContent = rcClient;
-		_content.Create(L"60", WS_CLIPCHILDREN  | WS_CHILD | WS_VISIBLE | SS_CENTER | SS_CENTERIMAGE, rcContent, this, IDC_CONTENT);
+		_content.Create(L"60", WS_CLIPCHILDREN | WS_CHILD | WS_VISIBLE | SS_CENTER | SS_CENTERIMAGE, rcContent, this, IDC_CONTENT);
 		_content.ShowWindow(SW_SHOW);
 		_content.SetFont(&font);//设置字体
+	}
+
+	// 注册鼠标钩子
+	{
+		glHook = SetWindowsHookEx(WH_MOUSE_LL, MouseProc, GetModuleHandle(NULL), 0);
 	}
 
 	// 初始化
@@ -118,9 +140,26 @@ BOOL CBNSTabTimerDlg::OnInitDialog()
 	LayoutUtility::SetControl(this, LayoutUtility::ANCHOR_RIGHTTOP);
 
 	// 注册热键
-	RegisterHotKey(m_hWnd, 1001, 0, 'E');
+	//RegisterHotKey(m_hWnd, 1001, 0, 'E');
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
+}
+
+void CBNSTabTimerDlg::OnDestroy()
+{
+	// 释放鼠标钩子
+	{
+		if (glHook)
+			UnhookWindowsHookEx(glHook);
+	}
+
+	Reset();
+
+	// 注销热键
+	//UnregisterHotKey(m_hWnd, 1001);
+
+	font.DeleteObject();
+	__super::OnDestroy();
 }
 
 void CBNSTabTimerDlg::OnSysCommand(UINT nID, LPARAM lParam)
@@ -167,7 +206,7 @@ void CBNSTabTimerDlg::OnRButtonUp(UINT nFlags, CPoint point)
 	}
 	else if (nCmd == IDC_ABOUT)
 	{
-		::MessageBox(::GetActiveWindow(), L"按下R+E触发", L"帮助", MB_OK | MB_ICONINFORMATION);
+		::MessageBox(::GetActiveWindow(), L"按下鼠标侧键触发", L"帮助", MB_OK | MB_ICONINFORMATION);
 	}
 	else if (nCmd == IDC_CLOSE)
 	{
@@ -202,7 +241,7 @@ HBRUSH CBNSTabTimerDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 	HBRUSH hbr = __super::OnCtlColor(pDC, pWnd, nCtlColor);
 
 	// TODO:  在此更改 DC 的任何特性
-	if ( pWnd->GetDlgCtrlID() == IDC_CONTENT)
+	if (pWnd->GetDlgCtrlID() == IDC_CONTENT)
 	{
 		pDC->SetTextColor(_textColor);
 		pDC->SetBkMode(TRANSPARENT);
@@ -262,14 +301,20 @@ void CBNSTabTimerDlg::UpdateTime()
 
 void CBNSTabTimerDlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
 {
-	if (nHotKeyId == 1001)
-	{
-		if (GetAsyncKeyState('R') & 0x8000)
-		{
-			Reset();
-			Start();
-		}
-	}
+	//if (nHotKeyId == 1001)
+	//{
+	//	if (GetAsyncKeyState('R') & 0x8000)
+	//	{
+	//		Reset();
+	//		Start();
+	//	}
+	//}
 
 	__super::OnHotKey(nHotKeyId, nKey1, nKey2);
+}
+
+
+BOOL CBNSTabTimerDlg::PreTranslateMessage(MSG* pMsg)
+{
+	return __super::PreTranslateMessage(pMsg);
 }
